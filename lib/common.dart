@@ -23,4 +23,14 @@ String getStringFromFile(String s, int start, {int end = -1}) {
   return res;
 }
 
+class Point {
+  final int x, y;
 
+  Point(this.x, this.y);
+
+  @override
+  bool operator== (Object other) => other is Point && other.x == x && other.y == y;
+
+  @override
+  int get hashCode => Object.hash(x, y);
+}
