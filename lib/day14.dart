@@ -97,7 +97,6 @@ class Day14 extends Day with ProblemReader, SolutionCheck {
     if (hashCache.containsKey(index)) {
       return hashCache[index]!;
     }
-    print("missing: $index");
     var hash = getHash(salt, index, part2);
     hashCache[index] = hash;
     return hash;
