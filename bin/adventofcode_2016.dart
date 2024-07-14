@@ -16,6 +16,7 @@ import 'package:adventofcode_2016/day13.dart';
 import 'package:adventofcode_2016/day14.dart';
 import 'package:adventofcode_2016/day15.dart';
 import 'package:adventofcode_2016/day16.dart';
+import 'package:adventofcode_2016/day17.dart';
 
 import 'dart:developer';
 import 'package:worker_manager/worker_manager.dart';
@@ -39,7 +40,8 @@ void main(List<String> arguments) async {
     Day13(),
     Day14(), // again, takes 13 seconds, md5 password cruncher
     Day15(),
-    Day16()
+    Day16(),
+    Day17()
   ];
 
   for (var day in days) {
