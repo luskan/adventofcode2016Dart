@@ -17,6 +17,14 @@ import 'package:adventofcode_2016/day14.dart';
 import 'package:adventofcode_2016/day15.dart';
 import 'package:adventofcode_2016/day16.dart';
 import 'package:adventofcode_2016/day17.dart';
+import 'package:adventofcode_2016/day18.dart';
+import 'package:adventofcode_2016/day19.dart';
+import 'package:adventofcode_2016/day20.dart';
+import 'package:adventofcode_2016/day21.dart';
+import 'package:adventofcode_2016/day22.dart';
+import 'package:adventofcode_2016/day23.dart';
+import 'package:adventofcode_2016/day24.dart';
+import 'package:adventofcode_2016/day25.dart';
 
 import 'dart:developer';
 import 'package:worker_manager/worker_manager.dart';
@@ -25,6 +33,7 @@ void main(List<String> arguments) async {
   //await Executor().warmUp(log: true);
 
   var days = <Day>[
+    /*
     Day01(),
     Day02(),
     Day03(),
@@ -41,7 +50,17 @@ void main(List<String> arguments) async {
     Day14(), // again, takes 13 seconds, md5 password cruncher
     Day15(),
     Day16(),
-    Day17()
+    Day17(),*/
+    Day18(),
+    /*
+    Day19(),
+    Day20(),
+    Day21(),
+    Day22(),
+    Day23(),
+    Day24(),
+    Day25()
+     */
   ];
 
   for (var day in days) {
