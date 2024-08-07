@@ -33,7 +33,6 @@ void main(List<String> arguments) async {
   //await Executor().warmUp(log: true);
 
   var days = <Day>[
-    /*
     Day01(),
     Day02(),
     Day03(),
@@ -50,12 +49,11 @@ void main(List<String> arguments) async {
     Day14(), // again, takes 13 seconds, md5 password cruncher
     Day15(),
     Day16(),
-    Day17(),*/
+    Day17(),
     Day18(),
-    /*
     Day19(),
     Day20(),
-    Day21(),
+    /*Day21(),
     Day22(),
     Day23(),
     Day24(),
