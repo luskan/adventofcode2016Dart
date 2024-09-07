@@ -6,6 +6,12 @@ import 'package:test/test.dart';
 
 void main() {
   test('day20 ...', () async {
-    expect(await Day20().solve("10000") == 0, true);
+    var testInput = '''
+5-8
+0-2
+4-7
+''';
+
+    expect(await Day20().solve(Day20.parseData(testInput), 0, 9) == 3, true);
   });
 }
