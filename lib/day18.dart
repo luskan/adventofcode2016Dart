@@ -44,7 +44,6 @@ class Day18 extends Day with ProblemReader, SolutionCheck {
       safeFields += data.split("").where((element) => element == ".").length;
     }
 
-    print("$safeFields");
     return safeFields;
   }
 

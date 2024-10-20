@@ -266,6 +266,7 @@ class Day22 extends Day with ProblemReader, SolutionCheck {
       for (var dataPt in dataPath) {
         var path = _findPathUsingDijkstra(entries, emptyPt, dataPt, [prevDataPt]);
 
+        /*
         print("\n");
         printMap(entries, [], emptyPt, prevDataPt);
         print("\n");
@@ -273,6 +274,7 @@ class Day22 extends Day with ProblemReader, SolutionCheck {
           printMap(entries, [], path[i], prevDataPt);
           print("\n");
         }
+         */
 
         numberOfSteps += path.length + 1;
         emptyPt = prevDataPt;
