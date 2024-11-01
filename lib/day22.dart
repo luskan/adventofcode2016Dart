@@ -434,15 +434,11 @@ class Day22 extends Day with ProblemReader, SolutionCheck {
       for (var dataPt in dataPath) {
         var path = _findPathUsingDijkstra(entries, emptyPt, dataPt, [prevDataPt]);
 
-        ///*
-        //print("\n");
-        //printMap(id++, entries, [], emptyPt, prevDataPt);
-        //print("\n");
+        /*
         for (var i = 0; i < path.length; ++i) {
           printMap(id++, entries, path, path[i], prevDataPt);
-          //print("\n");
         }
-         //*/
+        */
 
         numberOfSteps += path.length + 1;
         emptyPt = prevDataPt;
@@ -459,9 +455,9 @@ class Day22 extends Day with ProblemReader, SolutionCheck {
 
     var data = readData("../adventofcode_input/2016/data/day22.txt");
 
-    //var res1 = await solve(parseData(data));
-    //print('Part1: $res1');
-    //verifyResult(res1, getIntFromFile("../adventofcode_input/2016/data/day22_results.txt", 0));
+    var res1 = await solve(parseData(data));
+    print('Part1: $res1');
+    verifyResult(res1, getIntFromFile("../adventofcode_input/2016/data/day22_results.txt", 0));
 
     var res2 = await solve(parseData(data), part2: true);
     print('Part2: $res2');
