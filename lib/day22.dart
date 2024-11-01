@@ -92,6 +92,8 @@ class Day22 extends Day with ProblemReader, SolutionCheck {
 
   List<img.Image> frames = [];
 
+  // Creates blinking artifacts, its better to generate each frame as png and
+  // use imagemagick to create a gif.
   void saveGif(String filePath) {
     var animatedGif = img.GifEncoder();  // Create a GIF encoder
     for (var frame in frames) {
@@ -215,48 +217,6 @@ class Day22 extends Day with ProblemReader, SolutionCheck {
     return path.reversed.toList();
   }
 
-  static (double width, double height) calculateTextExtent(
-      dynamic text,
-      dynamic font, {
-        double scale = 1.0,
-        double letterSpacing = 0,
-        double lineHeight = 1.0,
-      }) {
-    // Convert input to string if it's not already a string
-    String textString = text.toString();
-
-    if (textString.isEmpty) return (0, 0);
-
-    double stringWidth = 0;
-    double stringHeight = 0;
-
-    final chars = textString.codeUnits;
-    for (var c in chars) {
-      if (!font.characters.containsKey(c)) {
-        continue;
-      }
-
-      final ch = font.characters[c]!;
-
-      // Calculate width
-      stringWidth += (ch.xadvance * scale);
-
-      // Add letter spacing (except after the last character)
-      if (c != chars.last) {
-        stringWidth += letterSpacing;
-      }
-
-      // Calculate height
-      double characterHeight = (ch.height + ch.yoffset) * scale * lineHeight;
-
-      // Update max height if current character is taller
-      if (characterHeight > stringHeight) {
-        stringHeight = characterHeight;
-      }
-    }
-
-    return (stringWidth, stringHeight);
-  }
 
   var maxX = -1;
   var maxY = -1;
@@ -383,7 +343,7 @@ class Day22 extends Day with ProblemReader, SolutionCheck {
     }
 
     // Saves pngs to create a gif with:
-    // magick -delay 10 -loop 0 $(ls day*_map.png | sort -V) output.gif
+    // magick -delay 10 -loop 0 $(ls day*_map.png | sort -V) -compress LZW -layers optimize output.gif
     // Dart aproach (saveGif) creates many ugly artifacts.
     var encodedImage = img.PngEncoder().encodeImage(image);
     File('imgs/day${id.toString().padLeft(3, '0')}_map.png').writeAsBytesSync(encodedImage);
