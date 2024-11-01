@@ -7,6 +7,8 @@ import 'package:adventofcode_2016/day.dart';
 import 'package:adventofcode_2016/solution_check.dart';
 import 'package:collection/collection.dart';
 
+import 'package:image/image.dart' as img;
+
 import 'common.dart';
 
 class DFEntry {
@@ -29,7 +31,9 @@ class DFEntry {
 
   Point get pt => Point(x, y);
 
-  bool isLarge() => size > 100; // Should be calculated from the input
+  bool isLarge() => size > 100; // Its a node with very large data as used, it cannot be
+                                // used to exchange data with empty, so we use it as a
+                                // wall. Actually it should be calculated from the input.
 
   // Copy constructor
   DFEntry.copy(DFEntry other)
@@ -85,6 +89,25 @@ class DFEntry {
  */
 
 class Day22 extends Day with ProblemReader, SolutionCheck {
+
+  List<img.Image> frames = [];
+
+  void saveGif(String filePath) {
+    var animatedGif = img.GifEncoder();  // Create a GIF encoder
+    for (var frame in frames) {
+      // Ensure each frame is properly initialized
+      var frameCopy = img.Image.from(frame);
+      animatedGif.addFrame(frameCopy, duration: 100);  // Add each frame to the GIF
+    }
+
+    var gifData = animatedGif.finish();
+    if (gifData != null) {
+      File(filePath).writeAsBytesSync(gifData);
+      print('GIF saved at $filePath');
+    } else {
+      print('Failed to create GIF');
+    }
+  }
 
   static String readData(var filePath) {
     var data = File(filePath).readAsStringSync();
@@ -192,37 +215,181 @@ class Day22 extends Day with ProblemReader, SolutionCheck {
     return path.reversed.toList();
   }
 
-  void printMap(Map<Point, DFEntry> entries, List<Point> path, Point emptyPtOverride, Point dataPtOverride) {
-    var maxX = entries.keys.reduce((value, element) => element.x > value.x ? element : value).x;
-    var maxY = entries.keys.reduce((value, element) => element.y > value.y ? element : value).y;
+  static (double width, double height) calculateTextExtent(
+      dynamic text,
+      dynamic font, {
+        double scale = 1.0,
+        double letterSpacing = 0,
+        double lineHeight = 1.0,
+      }) {
+    // Convert input to string if it's not already a string
+    String textString = text.toString();
+
+    if (textString.isEmpty) return (0, 0);
+
+    double stringWidth = 0;
+    double stringHeight = 0;
+
+    final chars = textString.codeUnits;
+    for (var c in chars) {
+      if (!font.characters.containsKey(c)) {
+        continue;
+      }
+
+      final ch = font.characters[c]!;
+
+      // Calculate width
+      stringWidth += (ch.xadvance * scale);
+
+      // Add letter spacing (except after the last character)
+      if (c != chars.last) {
+        stringWidth += letterSpacing;
+      }
+
+      // Calculate height
+      double characterHeight = (ch.height + ch.yoffset) * scale * lineHeight;
+
+      // Update max height if current character is taller
+      if (characterHeight > stringHeight) {
+        stringHeight = characterHeight;
+      }
+    }
+
+    return (stringWidth, stringHeight);
+  }
+
+  var maxX = -1;
+  var maxY = -1;
+  late img.BitmapFont font;
+
+  void printMap(int id, Map<Point, DFEntry> entries, List<Point> path, Point emptyPtOverride, Point dataPtOverride) {
+    var cellSize = 20; // Size of each cell in pixels
+
+    if (maxX == -1) {
+      maxX = entries.keys.reduce((value, element) => element.x > value.x ? element : value).x + 1;
+      maxY = entries.keys.reduce((value, element) => element.y > value.y ? element : value).y + 1;
+      font = img.BitmapFont.fromZip(File('fonts/Tahoma-Bold-14.ttf.zip').readAsBytesSync());
+    }
+
+    var width = (maxX+1) * cellSize;
+    var height = (maxY+1) * cellSize;
+
+    var image = img.Image(width, height);
 
     var emptyUsageNode = emptyPtOverride == null ? _findEmptyUsageEntry(entries).pt : emptyPtOverride;
 
+    var printConsole = false;
+
     for (var y = 0; y <= maxY; ++y) {
       for (var x = 0; x <= maxX; ++x) {
-        var entry = entries[Point(x, y)]!;
+
+        if (y == 0 && x == 0) {
+          continue;
+        }
+
+        // If first row, then write 0 - 9 numbers
+        if (y == 0 && x > 0) {
+          var num = x - 1;
+          var color = img.getColor(255, 255, 255); // White
+          var extents = calculateTextExtent(num.toString(), font);
+          var textX = (x * cellSize) + (cellSize ~/ 2) - (extents.$1 ~/ 2);
+          var textY = (cellSize ~/ 2) - (extents.$2 ~/ 2);
+
+          img.fillRect(image, (x) * cellSize, (y) * cellSize, (x+1) * cellSize, (y+1) * cellSize, img.getColor(128, 128, 128));
+
+          img.drawString(
+              image, font, textX, textY, num.toString(),
+              color: color);
+
+          continue;
+        }
+
+        // If first column, then write 0 - 9 numbers
+        if (x == 0 && y > 0) {
+          var num = y - 1;
+          var color = img.getColor(255, 255, 255); // White
+          var extents = calculateTextExtent(num.toString(), font);
+
+          var textX = (cellSize ~/ 2) - (extents.$1 ~/ 2);
+          var textY = (y * cellSize) + (cellSize ~/ 2) - (extents.$2 ~/ 2);
+
+          img.fillRect(image, (x) * cellSize, (y) * cellSize, (x+1) * cellSize, (y+1) * cellSize, img.getColor(128, 128, 128));
+
+          img.drawString(
+              image, font, textX, textY, num.toString(),
+              color: color);
+
+          continue;
+        }
+
+        //if (!entries.containsKey(Point(x-1, y-1)))
+        //  continue;
+
+        var entry = entries[Point(x-1, y-1)]!;
+        int color;
+        String symbol = "";
         if (entry.x == 0 && entry.y == 0) {
-          stdout.write("0");
+          // Color for '0'
+          color = img.getColor(108, 108, 108);
+          symbol = "[.]";
+        } else if (entry.x == dataPtOverride.x && entry.y == dataPtOverride.y) {
+          // Color for 'G'
+          color = img.getColor(108, 108, 108);
+          symbol = "G";
+        } else if (emptyUsageNode == entry.pt) {
+          // Color for '_'
+          color = img.getColor(0, 255, 0); // Green
+          symbol = "_";
+        } else if (entry.isLarge()) {
+          // Color for '#'
+          color = img.getColor(0, 0, 255); // Blue
+          symbol = "#";
+        } else {
+          if (path.contains(entry.pt)) {
+            // Color for '*'
+            color = img.getColor(255, 255, 0); // Yellow
+            if (printConsole)
+              stdout.write("*");
+          } else {
+            // Color for '.'
+            symbol = ".";
+            color = img.getColor(128, 128, 128); // Gray
+          }
+
         }
-        else if (dataPtOverride != null && entry.x == dataPtOverride.x && entry.y == dataPtOverride.y) {
-          stdout.write("G");
-        }
-        else
-        if (emptyUsageNode == entry.pt) {
-          stdout.write("_");
-        }
-        else if (entry.isLarge()) {
-          stdout.write("#");
-        }
-        else {
-          if (path.contains(entry.pt))
-            stdout.write("*");
-          else
-            stdout.write(".");
-        }
+
+
+        if (printConsole)
+          stdout.write(symbol);
+
+        // Draw the cell onto the image
+        img.fillRect(image, (x) * cellSize, (y) * cellSize, (x+1) * cellSize, (y+1) * cellSize, color);
+
+        var extents = calculateTextExtent(symbol, font);
+        var textX = ((x) * cellSize) + (cellSize ~/ 2) - (extents.$1 ~/ 2);
+        var textY = ((y) * cellSize) + (cellSize ~/ 2) - (extents.$2 ~/ 2);
+        img.drawString(image, font, textX, textY, symbol,
+            color: img.getColor(255, 255, 255));
+
       }
+      if (printConsole)
+        stdout.write("\n");
+    }
+
+    if (printConsole) {
+      stdout.write("\n");
+      stdout.write("\n");
       stdout.write("\n");
     }
+
+    // Saves pngs to create a gif with:
+    // magick -delay 10 -loop 0 $(ls day*_map.png | sort -V) output.gif
+    // Dart aproach (saveGif) creates many ugly artifacts.
+    var encodedImage = img.PngEncoder().encodeImage(image);
+    File('imgs/day${id.toString().padLeft(3, '0')}_map.png').writeAsBytesSync(encodedImage);
+
+    // Add the image to the frames list
+    frames.add(image);
   }
 
   Future<int> solve(dynamic data, {var part2 = false}) async {
@@ -263,18 +430,19 @@ class Day22 extends Day with ProblemReader, SolutionCheck {
       var emptyUsageNode = _findEmptyUsageEntry(entries);
       var emptyPt = emptyUsageNode.pt;
       var prevDataPt = Point(topRight.x, topRight.y);
+      int id = 0;
       for (var dataPt in dataPath) {
         var path = _findPathUsingDijkstra(entries, emptyPt, dataPt, [prevDataPt]);
 
-        /*
-        print("\n");
-        printMap(entries, [], emptyPt, prevDataPt);
-        print("\n");
+        ///*
+        //print("\n");
+        //printMap(id++, entries, [], emptyPt, prevDataPt);
+        //print("\n");
         for (var i = 0; i < path.length; ++i) {
-          printMap(entries, [], path[i], prevDataPt);
-          print("\n");
+          printMap(id++, entries, path, path[i], prevDataPt);
+          //print("\n");
         }
-         */
+         //*/
 
         numberOfSteps += path.length + 1;
         emptyPt = prevDataPt;
@@ -291,12 +459,15 @@ class Day22 extends Day with ProblemReader, SolutionCheck {
 
     var data = readData("../adventofcode_input/2016/data/day22.txt");
 
-    var res1 = await solve(parseData(data));
-    print('Part1: $res1');
-    verifyResult(res1, getIntFromFile("../adventofcode_input/2016/data/day22_results.txt", 0));
+    //var res1 = await solve(parseData(data));
+    //print('Part1: $res1');
+    //verifyResult(res1, getIntFromFile("../adventofcode_input/2016/data/day22_results.txt", 0));
 
     var res2 = await solve(parseData(data), part2: true);
     print('Part2: $res2');
     verifyResult(res2, getIntFromFile("../adventofcode_input/2016/data/day22_results.txt", 1));
+
+    // poor quality, better to use imagemagick
+    //saveGif('day22_animation.gif');
   }
 }

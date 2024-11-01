@@ -19,3 +19,4 @@ dependencies:
   worker_manager: ^4.2.6
   convert: ^3.0.1 # Use the latest version available
   collection: ^1.18.0
+  image: ^3.2.2
