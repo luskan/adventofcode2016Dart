@@ -6,6 +6,15 @@ import 'package:test/test.dart';
 
 void main() {
   test('day23 ...', () async {
-    expect(await Day23().solve("10000") == 0, true);
+    var testData = '''
+cpy 2 a
+tgl a
+tgl a
+tgl a
+cpy 1 a
+dec a
+dec a
+''';
+    expect(await Day23().solve(Day23.parseData(testData)), 3);
   });
 }
