@@ -6,6 +6,14 @@ import 'package:test/test.dart';
 
 void main() {
   test('day24 ...', () async {
-    expect(await Day24().solve("10000") == 0, true);
+var testData = '''
+###########
+#0.1.....2#
+#.#######.#
+#4.......3#
+###########
+''';
+
+  expect(await Day24().solve(Day24.parseData(testData)), 14);
   });
 }

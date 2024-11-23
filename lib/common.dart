@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 final int maxInt = (double.infinity is int) ? double.infinity as int : ~minInt;
 final int minInt =
@@ -35,6 +36,13 @@ class Point {
 
   @override
   int get hashCode => Object.hash(x, y);
+
+  @override
+  String toString() => '($x, $y)';
+
+  double distanceTo(Point other) {
+    return sqrt(pow((x - other.x), 2) + pow((y - other.y), 2));
+  }
 }
 
 (double width, double height) calculateTextExtent(

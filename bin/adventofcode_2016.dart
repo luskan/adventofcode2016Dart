@@ -33,6 +33,7 @@ void main(List<String> arguments) async {
   //await Executor().warmUp(log: true);
 
   var days = <Day>[
+    /*
     Day01(),
     Day02(),
     Day03(),
@@ -55,9 +56,9 @@ void main(List<String> arguments) async {
     Day20(),
     Day21(),
     Day22(),
-    Day23(),
-    /*Day24(),
-    Day25()
+    Day23(),*/
+    Day24(),
+    /*Day25()
      */
   ];
 
