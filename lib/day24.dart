@@ -5,13 +5,17 @@ import 'dart:math';
 import 'package:adventofcode_2016/day.dart';
 import 'package:adventofcode_2016/solution_check.dart';
 
+import 'package:image/image.dart' as img;
+
 import 'common.dart';
 
 class ParsedData {
   final Map<Point, int> grid;
   final Map<int, Point> nodePositions;
+  final int width;
+  final int height;
 
-  ParsedData(this.grid, this.nodePositions);
+  ParsedData(this.grid, this.nodePositions, this.width, this.height);
 }
 
 class GridEntry {
@@ -32,158 +36,96 @@ class GridEntry {
  * startPoint: The starting point for the journey - [0, pointsCounts-1].
  * returnToStart: Whether the TSP path must return to the start node.
  * pointsPath: returns indexes of the points in the path. This is the order of the points to visit.
+ * pointsOrdered: returns the points in the path. This is the order of the points to visit.
  */
-int heldKarp(Map<int, Map<int, int>> distances, int pointsCounts, int startPoint,
-    bool returnToStart, List<int> pointsPath)
+int heldKarp(
+    Map<int, Map<int, Map<String, dynamic>>> distances,
+    int pointsCounts,
+    int startPoint,
+    bool returnToStart,
+    bool reconstructPath,
+    List<Point> pointsPath,
+    List<Point> pointsOrdered)
 {
-
-  // Step 1:total number of nodes (places).
   int n = pointsCounts;
-
-  // Example:
-  // If n = 4, places are numbered as 0, 1, 2, 3.
-
-  // Step 2: Initialize the DP table (Held-Karp is a dynamic programming algorithm
-  // which uses tabulation).
-  // dp[mask][i] holds the minimum cost to visit the subset of nodes
-  // represented by mask, ending at node i.
-  //
-  // dp table looks like this:
-  // mask (subset of visited places) -> [cost for ending at place 0, place 1, ..., place n-1]
-  // mask = 0011 -> [inf, 5, inf, inf] // Subset {0, 1}, ending at place 1, costs 5.
-  //
-  // 1 << n means 2^n, which represents all subsets of the n nodes.
   var dp = List.generate(1 << n, (_) => List.filled(n, double.infinity));
+  Map<int, Map<int, int>> parent = {};
 
-  // Step 3: Base case: Start at the start place with no travel cost.
   dp[1 << startPoint][startPoint] = 0;
 
-  // 1 << start is a bitmask representing the subset {start}.
-  // Example:
-  // If start = 0 and n = 4, bitmask = 0001.
-
-  // Step 4: Fill the DP table for all subsets and all ending nodes.
   for (int mask = 1; mask < (1 << n); mask++) {
-
-    // Loop through all subsets of places represented by `mask`.
-    //
-    // mask example (n = 4):
-    // 0001 -> Subset {0}
-    // 0011 -> Subset {0, 1}
-    // 0111 -> Subset {0, 1, 2}
-    // 1111 -> Subset {0, 1, 2, 3}
-
     for (int i = 0; i < n; i++) {
-
-      // Check if place i is included in the current subset mask.
-      // This is done by checking if the i-th bit in mask is set.
-
       if ((mask & (1 << i)) != 0) {
-
-        // If i is in the subset, try to calculate the cost of ending at i.
-
         for (int j = 0; j < n; j++) {
-
-          // Explore all other places j in the subset to determine
-          // the optimal path to reach place i.
-
           if (i != j && (mask & (1 << j)) != 0) {
-
-            // Ensure i is not the same as j (no self-loops)
-            // and place j is also in the subset.
-
-            // Update dp[mask][i]:
-            // Minimum cost of reaching i by considering the cost of
-            // traveling from j to i and the best cost of reaching j
-            // without visiting i.
-
-            dp[mask][i] = min(
-                dp[mask][i],
-                dp[mask ^ (1 << i)][j] + distances[j]![i]!
-            );
-            //
-            // If mask = 0111 (Subset {0, 1, 2}), i = 2, j = 1:
-            // dp[0111][2] = min(dp[0111][2], dp[0011][1] + distances[1][2])
-            //
-            // mask ^ (1 << i) removes i from the subset.
-            // Ex.:
-            // mask = 0111 (Subset {0, 1, 2})
-            // i = 2 (Place 2)
-            // mask ^ (1 << 2) = 0011 (Subset {0, 1})
+            double newCost =
+                dp[mask ^ (1 << i)][j] + distances[j]![i]!['distance'];
+            if (newCost < dp[mask][i]) {
+              dp[mask][i] = newCost;
+              parent[mask] ??= {};
+              parent[mask]![i] = j;
+            }
           }
         }
       }
     }
   }
 
-  // Step 5: All places visited: Final mask is allVisitedMask.
-  int allVisitedMask = (1 << n) - 1; // ex: If n = 4, allVisitedMask = 1111.
-
-  // Step 6: Compute the minimum cost to visit all places.
+  int allVisitedMask = (1 << n) - 1;
   double minCost = double.infinity;
+  int endPoint = -1;
+
   for (int i = 0; i < n; i++) {
-
-    // Consider all places i as the last visited place.
-
     if (i != startPoint) {
-
-      // Skip the start place as we cannot "end" at the start initially.
-
+      double cost = dp[allVisitedMask][i];
       if (returnToStart) {
-
-        // If we need to return to the start place, add the cost of returning.
-
-        minCost = min(
-            minCost,
-            dp[allVisitedMask][i] + distances[i]![startPoint]!
-        );
-      } else {
-
-        // If not returning to the start place, just consider the path cost.
-
-        minCost = min(
-            minCost,
-            dp[allVisitedMask][i]
-        );
+        cost += distances[i]![startPoint]!['distance'];
+      }
+      if (cost < minCost) {
+        minCost = cost;
+        endPoint = i;
       }
     }
   }
 
-  // Collect the path as a list of points
-  // This is actually not needed for the solution, but it's a nice-to-have feature.
-  pointsPath.add(startPoint);
-  int mask = allVisitedMask;
-  int last = startPoint;
-  for (int i = 1; i < n; i++) {
-    int next = -1;
-    for (int j = 0; j < n; j++) {
-      if ((mask & (1 << j)) != 0) {
-        if (next == -1 || dp[mask][j] + distances[j]![last]! < dp[mask][next] + distances[next]![last]!) {
-          next = j;
-        }
-      }
+  // Reconstruct the path
+  if (reconstructPath) {
+    //pointsPath.add(distances[startPoint]![endPoint]!['path'][0]); // Add the start point
+    List<int> order = [];
+    int mask = allVisitedMask;
+    int currentNode = endPoint;
+
+    while (currentNode != startPoint) {
+      order.add(currentNode);
+      int prevNode = parent[mask]![currentNode]!;
+      mask ^= (1 << currentNode);
+      currentNode = prevNode;
     }
-    pointsPath.add(next);
-    mask ^= 1 << next;
-    last = next;
-  }
+    order = order.reversed.toList();
 
-  // Now add all the points to the path
-  if (returnToStart) {
-    pointsPath.add(startPoint);
-  }
+    // Reconstruct the entire path using stored paths between nodes
+    for (int i = 0; i < order.length; i++) {
+      int from = i == 0 ? startPoint : order[i - 1];
+      int to = order[i];
+      pointsOrdered.add(distances[from]![to]!['path'][0]); // Add the start point
+      if (i + 1 == order.length)
+        pointsOrdered.add((distances[from]![to]!['path'] as List).last);
+      pointsPath.addAll(distances[from]![to]!['path'].skip(1)); // Skip the duplicate start point
+    }
 
-  // Step 7: Return the minimum cost as an integer.
+    if (returnToStart) {
+      pointsPath.addAll(distances[order.last]![startPoint]!['path'].skip(1));
+    }
+  }
 
   return minCost.toInt();
 }
 
 // Parse the input and compute shortest distances between all numbered nodes
-Map<int, Map<int, int>> computeDistanceMatrix(Map<int, Point> nodes, Map<Point, int> grid) {
+Map<int, Map<int, Map<String, dynamic>>> computeDistanceMatrix(
+    Map<int, Point> nodes, Map<Point, int> grid) {
+  Map<int, Map<int, Map<String, dynamic>>> distances = {};
 
-  // BFS to compute distances between nodes
-  Map<int, Map<int, int>> distances = {};
-  Map<int, Map<int, int>> paths = {};
   for (int start in nodes.keys) {
     distances[start] = _bfs(grid, nodes[start]!, nodes);
   }
@@ -191,15 +133,14 @@ Map<int, Map<int, int>> computeDistanceMatrix(Map<int, Point> nodes, Map<Point, 
   return distances;
 }
 
-
 // Breadth-First Search to calculate distances from one node to all others,
 // it also stores the path to the nodes.
-Map<int, int> _bfs(
+Map<int, Map<String, dynamic>> _bfs(
     Map<Point, int> grid,
     Point start,
-    Map<int, Point> nodes)
-{
+    Map<int, Point> nodes) {
   Map<Point, int> visited = {start: 0};
+  Map<Point, Point?> previousNode = {start: null};
   List<Point> queue = [start];
 
   while (queue.isNotEmpty) {
@@ -214,69 +155,40 @@ Map<int, int> _bfs(
     ]) {
       Point next = Point(current.x + direction.x, current.y + direction.y);
 
-      if (grid.containsKey(next) &&
-          !visited.containsKey(next)) {
+      if (grid.containsKey(next) && !visited.containsKey(next)) {
         visited[next] = currentDist + 1;
+        previousNode[next] = current;
         queue.add(next);
       }
     }
   }
 
-  // Extract distances to nodes
-  Map<int, int> result = {};
+  // Extract distances and reconstruct paths
+  Map<int, Map<String, dynamic>> result = {};
   for (var entry in nodes.entries) {
     if (visited.containsKey(entry.value)) {
-      result[entry.key] = visited[entry.value]!;
-
+      // Reconstruct path
+      List<Point> path = [];
+      Point? current = entry.value;
+      while (current != null) {
+        path.add(current);
+        current = previousNode[current];
+      }
+      result[entry.key] = {
+        'distance': visited[entry.value]!,
+        'path': path.reversed.toList(),
+      };
     }
   }
   return result;
 }
 
-// A* to calculate path from one node to the other
-List<Point> _dijkstra(Map<Point, int> grid, Point start, Point end) {
-  Map<Point, GridEntry> visited = {start: GridEntry(0, null)};
-  List<Point> queue = [start];
-
-  while (queue.isNotEmpty) {
-    queue.sort((a, b) => visited[a]!.distFromStart - visited[b]!.distFromStart);
-
-    Point current = queue.removeAt(0);
-    int currentDist = visited[current]!.distFromStart;
-
-    if (current == end) {
-      break;
-    }
-
-    for (var direction in [
-      Point(0, 1),
-      Point(1, 0),
-      Point(0, -1),
-      Point(-1, 0)
-    ]) {
-      Point next = Point(current.x + direction.x, current.y + direction.y);
-
-      if (grid.containsKey(next) &&
-          !visited.containsKey(next)) {
-        visited[next] = GridEntry(currentDist + 1, current);
-        queue.add(next);
-      }
-    }
-  }
-
-  // Extract path
-  List<Point> path = [];
-  Point? current = end;
-  while (current != null) {
-    path.add(current);
-    current = visited[current]!.prevNode;
-  }
-  path = path.reversed.toList();
-  return path;
-}
-
-
-int findMultiPointRoute(Map<int, Point> points, Map<Point, int> grid, bool returnToStart) {
+(int, Map<int, Map<int, Map<String, dynamic>>>) findMultiPointRoute(Map<int, Point> points,
+    Map<Point, int> grid,
+    List<Point> pathPoints,
+    List<Point> pointsOrdered,
+    bool returnToStart)
+{
   var distances = computeDistanceMatrix(points, grid);
 
   // Brute force and Held-Karp algorithm complexities:
@@ -310,10 +222,47 @@ int findMultiPointRoute(Map<int, Point> points, Map<Point, int> grid, bool retur
 
   // Held-Karp algorithm is slightly faster than brute force
   // 0:00:00.138446
-  var pathPoints = <int>[];
-  var minDist = heldKarp(distances, points.length, 0, returnToStart, pathPoints);
+  var minDist = heldKarp(distances, points.length, 0, returnToStart, true, pathPoints, pointsOrdered);
+  return (minDist, distances);
+}
 
-  return minDist;
+void printMap(Map<Point, int> grid,
+    Map<int, Map<int, Map<String, dynamic>>> distances,
+    Map<int, Point> points,
+    int width, int height,
+    List<Point> pathPoints,
+    List<Point> pointsOrdered) {
+
+  stdout.writeln('Points ordered:');
+  for (int i = 0; i < pointsOrdered.length - 1; i++) {
+    var from = points.keys.firstWhere((k) => points[k] == pointsOrdered[i]);
+    var to = points.keys.firstWhere((k) => points[k] == pointsOrdered[i + 1]);
+    var steps = (distances[from]![to]!['distance'] as int);
+    stdout.writeln('$from to $to ($steps steps)');
+  }
+  // Total steps
+  stdout.writeln('Total steps: ${pathPoints.length}');
+
+  stdout.writeln();
+  for (int n = 0; n < pathPoints.length; ++n) {
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        Point point = Point(x, y);
+        if (grid.containsKey(point)) {
+          int index = pathPoints.indexOf(point);
+          if (index != -1 && index <= n) {
+            stdout.write(grid[point] == -1 ? '*' : grid[point]);
+          } else {
+            stdout.write(grid[point] == -1 ? '.' : grid[point]);
+          }
+        } else {
+          stdout.write('#');
+        }
+      }
+      stdout.writeln();
+    }
+    stdout.writeln();
+  }
 }
 
 bruteForce(Map<int, Map<int, int>> distances, int length, int i, bool returnToStart) {
@@ -362,10 +311,11 @@ class Day24 extends Day with ProblemReader, SolutionCheck {
   static ParsedData parseData(var data) {
     Map<Point, int> grid = {};
     Map<int, Point> nodePositions = {};
-
+    int height = 0;
     List<String> lines = data.split('\n');
     for (int y = 0; y < lines.length; y++) {
       if (lines[y].trim().isEmpty) continue;
+      height++;
       for (int x = 0; x < lines[y].length; x++) {
         String value = lines[y][x];
         if (value == "#") continue;
@@ -379,11 +329,16 @@ class Day24 extends Day with ProblemReader, SolutionCheck {
         }
       }
     }
-    return ParsedData(grid, nodePositions);
+    return ParsedData(grid, nodePositions, lines[0].length, height);
   }
 
   Future<int> solve(ParsedData data, {var part2 = false}) async {
-    return findMultiPointRoute(data.nodePositions, data.grid, part2);
+    List<Point> pathPoints = [];
+    List<Point> pointsOrdered = [];
+    var (minDist, distances) = findMultiPointRoute(data.nodePositions, data.grid, pathPoints, pointsOrdered, part2);
+    printMap(data.grid, distances, data.nodePositions, data.width, data.height, pathPoints, pointsOrdered);
+
+    return minDist;
   }
 
   @override
