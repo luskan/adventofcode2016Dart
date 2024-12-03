@@ -244,7 +244,8 @@ void printMap(Map<Point, int> grid,
   stdout.writeln('Total steps: ${pathPoints.length}');
 
   stdout.writeln();
-  for (int n = 0; n < pathPoints.length; ++n) {
+  for (int n = pathPoints.length-1; n < pathPoints.length; ++n)
+  {
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
         Point point = Point(x, y);
@@ -336,7 +337,7 @@ class Day24 extends Day with ProblemReader, SolutionCheck {
     List<Point> pathPoints = [];
     List<Point> pointsOrdered = [];
     var (minDist, distances) = findMultiPointRoute(data.nodePositions, data.grid, pathPoints, pointsOrdered, part2);
-    printMap(data.grid, distances, data.nodePositions, data.width, data.height, pathPoints, pointsOrdered);
+    //printMap(data.grid, distances, data.nodePositions, data.width, data.height, pathPoints, pointsOrdered);
 
     return minDist;
   }

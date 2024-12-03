@@ -33,7 +33,6 @@ void main(List<String> arguments) async {
   //await Executor().warmUp(log: true);
 
   var days = <Day>[
-    /*
     Day01(),
     Day02(),
     Day03(),
@@ -56,17 +55,18 @@ void main(List<String> arguments) async {
     Day20(),
     Day21(),
     Day22(),
-    Day23(),*/
+    Day23(),
     Day24(),
-    /*Day25()
-     */
+    Day25()
   ];
 
+  var totalTime = Stopwatch()..start();
   for (var day in days) {
     var sw = Stopwatch()..start();
     await day.run();
     print('Profile: ${sw.elapsed.toString()}');
   }
+  print('\nTotal elapsed: ${totalTime.elapsed.toString()}');
 
   /*
   // Turned off as it does not alow to await for run method
