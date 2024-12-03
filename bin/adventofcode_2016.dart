@@ -1,4 +1,4 @@
-import 'dart:mirrors';
+//import 'dart:mirrors';
 import 'package:adventofcode_2016/day.dart';
 import 'package:adventofcode_2016/day01.dart';
 import 'package:adventofcode_2016/day02.dart';
@@ -26,8 +26,8 @@ import 'package:adventofcode_2016/day23.dart';
 import 'package:adventofcode_2016/day24.dart';
 import 'package:adventofcode_2016/day25.dart';
 
-import 'dart:developer';
-import 'package:worker_manager/worker_manager.dart';
+//import 'dart:developer';
+//import 'package:worker_manager/worker_manager.dart';
 
 void main(List<String> arguments) async {
   //await Executor().warmUp(log: true);
@@ -69,7 +69,7 @@ void main(List<String> arguments) async {
   print('\nTotal elapsed: ${totalTime.elapsed.toString()}');
 
   /*
-  // Turned off as it does not alow to await for run method
+  // Turned off as it does not allow to await for run method
   MirrorSystem mirrorSystem = currentMirrorSystem();
   mirrorSystem.libraries.forEach((lk, l) {
     l.declarations.forEach((dk, d) {
